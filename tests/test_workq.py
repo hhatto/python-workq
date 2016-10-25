@@ -14,7 +14,8 @@ class TestWorkq(unittest.TestCase):
         try:
             loop.run_until_complete(client.connect())
             loop.run_until_complete(client.add_job(job))
-            loop.run_until_complete(client.lease())
+            leased_job = loop.run_until_complete(client.lease(("ping1", ), 10000))
+            print(leased_job)
         finally:
             loop.close()
 

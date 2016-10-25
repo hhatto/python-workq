@@ -1,10 +1,12 @@
 import uuid
 import asyncio
 
+from workq.job import LeasedJob
+
 
 class WorkqError(Exception):
     """Workq Base Error"""
-    def __init__(slef, msg):
+    def __init__(self, msg):
         self.msg = msg
 
 
@@ -12,12 +14,30 @@ class WorkqProtocol(object):
 
     @staticmethod
     def check_response(msg):
-        if msg[0] == '-':
+        if msg[0] == ord('-'):
             raise WorkqError(msg.strip())
-        elif msg == b'+OK\r\n':
+        elif msg[0] == ord('+'):
             pass
         else:
             raise WorkqError("invlaid workq protocol")
+        # ok
+        r = msg.strip()[4:]
+        if len(r) == 0:
+            return None
+        return int(r)
+
+    @staticmethod
+    def parse_lease_body(msg):
+        """parse lease body (line 2-3)
+
+        <id> <name> <payload-size>
+        <payload-bytes>
+        """
+        lines = msg.splitlines()
+        _id, _name, _size = lines[0].strip().split()
+        _size = int(_size)
+        _payload = lines[1][:_size]
+        return LeasedJob(_id, _name, _payload)
 
 
 class WorkqClient(object):
@@ -34,13 +54,26 @@ class WorkqClient(object):
         self._r, self._w = yield from asyncio.wait_for(future, timeout=self._timeout, loop=self.loop)
 
     @asyncio.coroutine
-    def lease(self):
-        while True:
+    def lease(self, names, timeout=60000):
+        proto_names = " ".join(names)
+        msg = "lease %s %d\r\n" % (proto_names, timeout)
+        # send request
+        self._w.write(str.encode(msg))
+        future = self._w.drain()
+        yield from asyncio.wait_for(future, timeout=timeout/1000., loop=self.loop)
+
+        # wait response
+        future = self._r.readline()
+        buf = yield from asyncio.wait_for(future, timeout=5, loop=self.loop)
+        rnum = WorkqProtocol.check_response(buf)
+        jobs = []
+        for i in range(rnum):
             future = self._r.readline()
-            try:
-                buf = yield from asyncio.wait_for(future, timeout=5, loop=self.loop)
-            except asyncio.TimeoutError:
-                return
+            buf = yield from asyncio.wait_for(future, timeout=5, loop=self.loop)
+            future = self._r.readline()
+            buf += yield from asyncio.wait_for(future, timeout=5, loop=self.loop)
+            jobs.append(WorkqProtocol.parse_lease_body(buf))
+        return jobs
 
     @asyncio.coroutine
     def add_job(self, job):
@@ -74,7 +107,6 @@ if __name__ == '__main__':
     try:
         loop.run_until_complete(client.connect())
         loop.run_until_complete(client.add_job(job))
-        loop.run_until_complete(client.lease())
         loop.run_until_complete(client.lease())
     finally:
         loop.close()

@@ -9,3 +9,11 @@ class BackgroundJob(object):
         self.priority = priority
         self.max_attempts = max_attempts
         self.max_fails = max_fails
+
+
+class LeasedJob(object):
+
+    def __init__(self, jobid, name, payload):
+        self.id = jobid
+        self.name = name
+        self.payload = payload
