@@ -20,19 +20,6 @@ class WorkqProtocol(object):
             raise WorkqError("invlaid workq protocol")
 
 
-class BackgroundJob(object):
-
-    def __init__(self, jobid, name, ttr, ttl, payload, priority=0, max_attempts=0, max_fails=0):
-        self.id = jobid
-        self.name = name
-        self.ttr = ttr
-        self.ttl = ttl
-        self.payload = payload
-        self.priority = priority
-        self.max_attempts = max_attempts
-        self.max_fails = max_fails
-
-
 class WorkqClient(object):
 
     def __init__(self, host, port, loop):
@@ -48,19 +35,16 @@ class WorkqClient(object):
 
     @asyncio.coroutine
     def lease(self):
-        print("lease")
         while True:
             future = self._r.readline()
             try:
                 buf = yield from asyncio.wait_for(future, timeout=5, loop=self.loop)
             except asyncio.TimeoutError:
-                print("lease timeout")
                 return
-            print("lease:", buf, future)
 
     @asyncio.coroutine
     def add_job(self, job):
-        print("add_job")
+        # build request message for workq protocol
         options = []
         if job.priority != 0:
             options.append("-priority=%d" % job.priority)
@@ -71,13 +55,12 @@ class WorkqClient(object):
         option_arg = "" if len(options) == 0 else " " + " ".join(options)
         msg = "add %s %s %d %d %d%s\r\n%s\r\n" % (
                 job.id, job.name, job.ttr, job.ttl, len(job.payload), option_arg, job.payload)
+
+        # send request
         self._w.write(str.encode(msg))
         future = self._w.drain()
-        try:
-            yield from asyncio.wait_for(future, timeout=self._timeout, loop=self.loop)
-        except asyncio.TimeoutError:
-            print("add_job request timeout")
-            return
+        yield from asyncio.wait_for(future, timeout=self._timeout, loop=self.loop)
+
         # read reply
         future = self._r.readline()
         buf = yield from asyncio.wait_for(future, timeout=self._timeout, loop=self.loop)
