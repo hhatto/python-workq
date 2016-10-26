@@ -6,5 +6,6 @@ clean:
 	rm -rf */__pycache__
 
 pypireg:
-	${PYTHON} setup.py register
-	${PYTHON} setup.py sdist upload
+	python setup.py register
+	python setup.py sdist upload
+	python setup.py bdist_wheel upload
