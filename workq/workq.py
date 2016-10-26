@@ -2,12 +2,8 @@ import uuid
 import asyncio
 
 from workq.job import LeasedJob
-
-
-class WorkqError(Exception):
-    """Workq Base Error"""
-    def __init__(self, msg):
-        self.msg = msg
+from workq.error import WorkqError, WorkqClientError, WorkqServerError, \
+                        WorkqTimeout, WorkqJobIdNotFound
 
 
 class WorkqProtocol(object):
@@ -15,6 +11,14 @@ class WorkqProtocol(object):
     @staticmethod
     def check_response(msg):
         if msg[0] == ord('-'):
+            if msg[1] == ord('C'):      # -CLIENT-ERROR
+                raise WorkqClientError(msg.strip().split()[1])
+            elif msg[1] == ord('S'):    # -SERVER-ERROR
+                raise WorkqServerError(msg.strip().split()[1])
+            elif msg[1] == ord('T'):    # -TIMED-OUT
+                raise WorkqTimeout()
+            elif msg[1] == ord('N'):    # -NOT-FOUND
+                raise WorkqJobIdNotFound()
             raise WorkqError(msg.strip())
         elif msg[0] == ord('+'):
             pass
