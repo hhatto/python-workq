@@ -9,7 +9,7 @@ except ImportError:
 exec(open('workq/_version.py').read())
 
 setup(
-    name='workq',
+    name='python-workq',
     version=__version__,
     description="Python Client for Workq",
     long_description=open("README.rst").read(),
