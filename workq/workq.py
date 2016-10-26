@@ -47,7 +47,7 @@ class WorkqProtocol(object):
         elif msg[0] == ord('+'):
             pass
         else:
-            raise WorkqError("invlaid workq protocol")
+            raise WorkqError("invlaid workq protocol: %s" % msg)
         # ok
         r = msg.strip()[4:]
         if len(r) == 0:
@@ -158,11 +158,6 @@ class WorkqClient(object):
         # recv response
         future = self._r.readline()
         buf = yield from asyncio.wait_for(future, timeout=job.timeout*1.3/1000., loop=self.loop)
-        yield from self.send(msg, self._timeout)
-
-        # recv response
-        future = self._r.readline()
-        buf = yield from asyncio.wait_for(future, timeout=timeout*1.3/1000., loop=self.loop)
         rnum = WorkqProtocol.check_response(buf)
 
         # recv response body
@@ -177,7 +172,7 @@ class WorkqClient(object):
 
     @asyncio.coroutine
     def result(self, job_id, timeout=60000):
-        # build request message for complete command, and send request
+        # build request message for result command, and send request
         msg = "result %s %d\r\n" % (job_id, timeout)
         yield from self.send(msg, self._timeout)
 
