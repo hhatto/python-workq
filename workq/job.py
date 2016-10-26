@@ -62,6 +62,15 @@ class ForegroundJob(object):
         self.payload = payload
         self.priority = priority
 
+    def to_proto(self):
+        options = []
+        if self.priority != 0:
+            options.append("-priority=%d" % self.priority)
+        option_arg = "" if len(options) == 0 else " " + " ".join(options)
+        msg = "run %s %s %d %d %d%s\r\n%s\r\n" % (
+                self.id, self.name, self.ttr, self.timeout, len(self.payload), option_arg, self.payload)
+        return msg
+
 
 class LeasedJob(object):
 
