@@ -12,3 +12,7 @@ Requirements
 ------------
 * Python3.5+
 
+
+TODO
+----
+* [ ] inspect command
