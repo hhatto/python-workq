@@ -88,6 +88,32 @@ class WorkqClient(object):
         return jobs
 
     @asyncio.coroutine
+    def complete(self, job_id: str, result: str):
+        # build request message for complete command
+        msg = "complete %s %d\r\n%s\r\n" % (job_id, len(result), result)
+
+        # send request
+        yield from self.send(msg, self._timeout)
+
+        # check reply
+        future = self._r.readline()
+        buf = yield from asyncio.wait_for(future, timeout=self._timeout, loop=self.loop)
+        WorkqProtocol.check_response(buf)
+
+    @asyncio.coroutine
+    def fail(self, job_id: str, result: str):
+        # build request message for fail command
+        msg = "fail %s %d\r\n%s\r\n" % (job_id, len(result), result)
+
+        # send request
+        yield from self.send(msg, self._timeout)
+
+        # check reply
+        future = self._r.readline()
+        buf = yield from asyncio.wait_for(future, timeout=self._timeout, loop=self.loop)
+        WorkqProtocol.check_response(buf)
+
+    @asyncio.coroutine
     def add_job(self, job):
         """add background job"""
         # build request message for add command
