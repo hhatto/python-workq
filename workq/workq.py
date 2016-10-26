@@ -6,6 +6,30 @@ from workq.error import WorkqError, WorkqClientError, WorkqServerError, \
                         WorkqTimeout, WorkqJobIdNotFound
 
 
+class WorkqResult(object):
+
+    def __init__(self, jobid):
+        self.id = jobid
+        self._success = 0   # 0: fail, 1: success
+        self._result = ""
+
+    @property
+    def success(self):
+        return self._success == 1
+
+    @success.setter
+    def success(self, v):
+        self._success = v
+
+    @property
+    def result(self):
+        return self._result
+
+    @result.setter
+    def result(self, v):
+        self._result = v
+
+
 class WorkqProtocol(object):
 
     @staticmethod
@@ -42,6 +66,23 @@ class WorkqProtocol(object):
         _size = int(_size)
         _payload = lines[1][:_size]
         return LeasedJob(_id.decode(), _name.decode(), _payload.decode())
+
+    @staticmethod
+    def parse_result_body(msg):
+        """parse result body (line 2-3)
+
+        <id> <success> <result-length>
+        <result-block>
+        """
+        lines = msg.splitlines()
+        _id, _success, _length = lines[0].strip().split()
+        _success = int(_success)
+        _length = int(_length)
+        _payload = lines[1][:_length]
+        result = WorkqResult(_id.decode())
+        result.success = _success
+        result.result = _payload.decode()
+        return result
 
 
 class WorkqClient(object):
@@ -135,7 +176,28 @@ class WorkqClient(object):
         return jobs
 
     @asyncio.coroutine
-    def complete(self, job_id: str, result: str):
+    def result(self, job_id, timeout=60000):
+        # build request message for complete command, and send request
+        msg = "result %s %d\r\n" % (job_id, timeout)
+        yield from self.send(msg, self._timeout)
+
+        # check reply
+        future = self._r.readline()
+        buf = yield from asyncio.wait_for(future, timeout=timeout/1000., loop=self.loop)
+        rnum = WorkqProtocol.check_response(buf)
+
+        # recv response body
+        results = []
+        for i in range(rnum):
+            future = self._r.readline()
+            buf = yield from asyncio.wait_for(future, timeout=self._timeout, loop=self.loop)
+            future = self._r.readline()
+            buf += yield from asyncio.wait_for(future, timeout=self._timeout, loop=self.loop)
+            results.append(WorkqProtocol.parse_result_body(buf))
+        return results
+
+    @asyncio.coroutine
+    def complete(self, job_id, result):
         # build request message for complete command, and send request
         msg = "complete %s %d\r\n%s\r\n" % (job_id, len(result), result)
         yield from self.send(msg, self._timeout)
