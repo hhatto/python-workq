@@ -1,8 +1,8 @@
 import asyncio
 import uuid
 from workq.workq import WorkqClient
-# from workq.error import WorkqTimeout, WorkqJobIdNotFound
 from workq.job import ForegroundJob
+
 
 def main():
     loop = asyncio.new_event_loop()
