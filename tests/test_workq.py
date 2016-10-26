@@ -4,7 +4,7 @@ import asyncio
 from datetime import datetime, timedelta
 from workq.workq import WorkqClient
 from workq.error import WorkqTimeout, WorkqJobIdNotFound
-from workq.job import BackgroundJob, ScheduledJob
+from workq.job import BackgroundJob, ScheduledJob, ForegroundJob
 
 
 class TestWorkq(unittest.TestCase):
@@ -37,6 +37,25 @@ class TestWorkq(unittest.TestCase):
             self.assertEqual(len(leased_job), 1)
             self.assertEqual(leased_job[0].id, "%s" % jobid)
             self.assertEqual(leased_job[0].name, "ping1")
+        finally:
+            loop.close()
+
+    def test_run(self):
+        self.skipTest("broken")
+        loop = asyncio.new_event_loop()
+        client = WorkqClient('127.0.0.1', 9922, loop)
+        jobid = uuid.uuid4()
+        job = ForegroundJob(jobid, "fg1", 5000, 60000, "hello fg job")
+        @asyncio.coroutine
+        def parallel(client, loop):
+            run_task = asyncio.ensure_future(client.run(job), loop=loop)
+            lease_task = asyncio.ensure_future(client.lease(("fg1", ), 10000), loop=loop)
+            tasks = [run_task, lease_task]
+            results = yield from asyncio.gather(*tasks, loop=loop)
+            return results
+        try:
+            loop.run_until_complete(client.connect())
+            results = loop.run_until_complete(parallel(client, loop))
         finally:
             loop.close()
 
