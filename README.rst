@@ -1,12 +1,10 @@
 python-workq
 ============
 
-WIP
-
-Python Client for Workq_ .
+Python Client for Workq_ with asyncio_ .
 
 .. _Workq: https://github.com/iamduo/workq
-
+.. _asyncio: https://docs.python.org/dev/library/asyncio.html
 
 Requirements
 ------------
