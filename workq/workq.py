@@ -46,10 +46,10 @@ class WorkqProtocol(object):
 
 class WorkqClient(object):
 
-    def __init__(self, host, port, loop):
+    def __init__(self, host='localhost', port=9922, loop=None):
         self.host = host
         self.port = port
-        self.loop = loop
+        self.loop = loop or asyncio.get_event_loop()
         self._timeout = 3
 
     @asyncio.coroutine
