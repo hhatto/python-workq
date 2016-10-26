@@ -37,7 +37,7 @@ class WorkqProtocol(object):
         _id, _name, _size = lines[0].strip().split()
         _size = int(_size)
         _payload = lines[1][:_size]
-        return LeasedJob(_id, _name, _payload)
+        return LeasedJob(_id.decode(), _name.decode(), _payload.decode())
 
 
 class WorkqClient(object):
