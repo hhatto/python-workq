@@ -2,7 +2,7 @@ import unittest
 import uuid
 import asyncio
 from workq.workq import WorkqClient
-from workq.error import WorkqTimeout
+from workq.error import WorkqTimeout, WorkqJobIdNotFound
 from workq.job import BackgroundJob
 
 
@@ -61,6 +61,29 @@ class TestWorkq(unittest.TestCase):
             self.assertEqual(len(leased_job), 1)
             ljob = leased_job[0]
             loop.run_until_complete(client.fail(ljob.id, "ng"))
+        finally:
+            loop.close()
+
+    def test_delete(self):
+        loop = asyncio.new_event_loop()
+        client = WorkqClient('127.0.0.1', 9922, loop)
+        jobid = uuid.uuid4()
+        job = BackgroundJob(jobid, "test.complete1", 5000, 60000, "hello bg job")
+        try:
+            loop.run_until_complete(client.connect())
+            loop.run_until_complete(client.add_job(job))
+            loop.run_until_complete(client.delete(job.id))
+        finally:
+            loop.close()
+
+    def test_delete_with_error(self):
+        loop = asyncio.new_event_loop()
+        client = WorkqClient('127.0.0.1', 9922, loop)
+        jobid = uuid.uuid4()
+        try:
+            loop.run_until_complete(client.connect())
+            with self.assertRaises(WorkqJobIdNotFound):
+                loop.run_until_complete(client.delete(jobid))
         finally:
             loop.close()
 
