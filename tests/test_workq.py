@@ -1,21 +1,38 @@
 import unittest
 import uuid
 import asyncio
+from datetime import datetime, timedelta
 from workq.workq import WorkqClient
 from workq.error import WorkqTimeout, WorkqJobIdNotFound
-from workq.job import BackgroundJob
+from workq.job import BackgroundJob, ScheduledJob
 
 
 class TestWorkq(unittest.TestCase):
 
-    def test_smoke(self):
+    def test_add(self):
         loop = asyncio.new_event_loop()
         client = WorkqClient('127.0.0.1', 9922, loop)
         jobid = uuid.uuid4()
         job = BackgroundJob(jobid, "ping1", 5000, 60000, "hello bg job")
         try:
             loop.run_until_complete(client.connect())
-            loop.run_until_complete(client.add_job(job))
+            loop.run_until_complete(client.add(job))
+            leased_job = loop.run_until_complete(client.lease(("ping1", ), 10000))
+            self.assertEqual(len(leased_job), 1)
+            self.assertEqual(leased_job[0].id, "%s" % jobid)
+            self.assertEqual(leased_job[0].name, "ping1")
+        finally:
+            loop.close()
+
+    def test_schedule(self):
+        loop = asyncio.new_event_loop()
+        client = WorkqClient('127.0.0.1', 9922, loop)
+        jobid = uuid.uuid4()
+        t = datetime.utcnow() + timedelta(seconds=1)
+        job = ScheduledJob(jobid, "ping1", 5000, 60000, t, "hello bg job")
+        try:
+            loop.run_until_complete(client.connect())
+            loop.run_until_complete(client.add(job))
             leased_job = loop.run_until_complete(client.lease(("ping1", ), 10000))
             self.assertEqual(len(leased_job), 1)
             self.assertEqual(leased_job[0].id, "%s" % jobid)
@@ -41,7 +58,7 @@ class TestWorkq(unittest.TestCase):
         job = BackgroundJob(jobid, "test.complete1", 5000, 60000, "hello bg job")
         try:
             loop.run_until_complete(client.connect())
-            loop.run_until_complete(client.add_job(job))
+            loop.run_until_complete(client.add(job))
             leased_job = loop.run_until_complete(client.lease(("test.complete1", ), 10000))
             self.assertEqual(len(leased_job), 1)
             ljob = leased_job[0]
@@ -56,7 +73,7 @@ class TestWorkq(unittest.TestCase):
         job = BackgroundJob(jobid, "test.complete1", 5000, 60000, "hello bg job")
         try:
             loop.run_until_complete(client.connect())
-            loop.run_until_complete(client.add_job(job))
+            loop.run_until_complete(client.add(job))
             leased_job = loop.run_until_complete(client.lease(("test.complete1", ), 10000))
             self.assertEqual(len(leased_job), 1)
             ljob = leased_job[0]
@@ -71,7 +88,7 @@ class TestWorkq(unittest.TestCase):
         job = BackgroundJob(jobid, "test.complete1", 5000, 60000, "hello bg job")
         try:
             loop.run_until_complete(client.connect())
-            loop.run_until_complete(client.add_job(job))
+            loop.run_until_complete(client.add(job))
             loop.run_until_complete(client.delete(job.id))
         finally:
             loop.close()

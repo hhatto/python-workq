@@ -64,6 +64,33 @@ class WorkqClient(object):
         self._r, self._w = yield from asyncio.wait_for(future, timeout=self._timeout, loop=self.loop)
 
     @asyncio.coroutine
+    def add(self, job):
+        """add background job"""
+        # build request message for add command
+        msg = job.to_proto()
+
+        # send request
+        yield from self.send(msg, self._timeout)
+
+        # read reply
+        future = self._r.readline()
+        buf = yield from asyncio.wait_for(future, timeout=self._timeout, loop=self.loop)
+        WorkqProtocol.check_response(buf)
+
+    @asyncio.coroutine
+    def schedule(self, job):
+        # build request message for schedule command
+        msg = job.to_proto()
+
+        # send request
+        yield from self.send(msg, self._timeout)
+
+        # read reply
+        future = self._r.readline()
+        buf = yield from asyncio.wait_for(future, timeout=self._timeout, loop=self.loop)
+        WorkqProtocol.check_response(buf)
+
+    @asyncio.coroutine
     def lease(self, names, timeout=60000):
         # build request message for lease command
         proto_names = " ".join(names)
@@ -109,20 +136,6 @@ class WorkqClient(object):
         yield from self.send(msg, self._timeout)
 
         # check reply
-        future = self._r.readline()
-        buf = yield from asyncio.wait_for(future, timeout=self._timeout, loop=self.loop)
-        WorkqProtocol.check_response(buf)
-
-    @asyncio.coroutine
-    def add_job(self, job):
-        """add background job"""
-        # build request message for add command
-        msg = job.to_proto()
-
-        # send request
-        yield from self.send(msg, self._timeout)
-
-        # read reply
         future = self._r.readline()
         buf = yield from asyncio.wait_for(future, timeout=self._timeout, loop=self.loop)
         WorkqProtocol.check_response(buf)
