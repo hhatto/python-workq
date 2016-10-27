@@ -45,3 +45,12 @@ Enqueue Foreground Job
 TODO
 ----
 * [ ] inspect command
+
+
+Links
+-----
+* PyPI_
+* GitHub_
+
+.. _PyPI: https://pypi.python.org/pypi/python-workq/
+.. _GitHub: https://github.com/hhatto/python-workq
