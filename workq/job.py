@@ -20,7 +20,7 @@ class BackgroundJob(object):
             options.append("-max-fails=%d" % self.max_fails)
         option_arg = "" if len(options) == 0 else " " + " ".join(options)
         msg = "add %s %s %d %d %d%s\r\n%s\r\n" % (
-                self.id, self.name, self.ttr, self.ttl, len(self.payload), option_arg, self.payload)
+            self.id, self.name, self.ttr, self.ttl, len(self.payload), option_arg, self.payload)
         return msg
 
 
@@ -48,7 +48,7 @@ class ScheduledJob(object):
         option_arg = "" if len(options) == 0 else " " + " ".join(options)
         t = self.time.isoformat("T").split('.')[0] + "Z"
         msg = "schedule %s %s %d %d %s %d%s\r\n%s\r\n" % (
-                self.id, self.name, self.ttr, self.ttl, t, len(self.payload), option_arg, self.payload)
+            self.id, self.name, self.ttr, self.ttl, t, len(self.payload), option_arg, self.payload)
         return msg
 
 
@@ -68,7 +68,7 @@ class ForegroundJob(object):
             options.append("-priority=%d" % self.priority)
         option_arg = "" if len(options) == 0 else " " + " ".join(options)
         msg = "run %s %s %d %d %d%s\r\n%s\r\n" % (
-                self.id, self.name, self.ttr, self.timeout, len(self.payload), option_arg, self.payload)
+            self.id, self.name, self.ttr, self.timeout, len(self.payload), option_arg, self.payload)
         return msg
 
 

@@ -1,9 +1,8 @@
-import uuid
 import asyncio
 
 from workq.job import LeasedJob
 from workq.error import WorkqError, WorkqClientError, WorkqServerError, \
-                        WorkqTimeout, WorkqJobIdNotFound
+    WorkqTimeout, WorkqJobIdNotFound
 
 
 class WorkqResult(object):
@@ -136,7 +135,7 @@ class WorkqClient(object):
 
         # recv response
         future = self._r.readline()
-        buf = yield from asyncio.wait_for(future, timeout=timeout*1.3/1000., loop=self.loop)
+        buf = yield from asyncio.wait_for(future, timeout=timeout * 1.3 / 1000., loop=self.loop)
         rnum = WorkqProtocol.check_response(buf)
 
         # recv response body
@@ -157,7 +156,7 @@ class WorkqClient(object):
 
         # recv response
         future = self._r.readline()
-        buf = yield from asyncio.wait_for(future, timeout=job.timeout*1.3/1000., loop=self.loop)
+        buf = yield from asyncio.wait_for(future, timeout=job.timeout * 1.3 / 1000., loop=self.loop)
         rnum = WorkqProtocol.check_response(buf)
 
         # recv response body
@@ -178,7 +177,7 @@ class WorkqClient(object):
 
         # check reply
         future = self._r.readline()
-        buf = yield from asyncio.wait_for(future, timeout=timeout/1000., loop=self.loop)
+        buf = yield from asyncio.wait_for(future, timeout=timeout / 1000., loop=self.loop)
         rnum = WorkqProtocol.check_response(buf)
 
         # recv response body

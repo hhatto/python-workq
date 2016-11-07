@@ -46,6 +46,7 @@ class TestWorkq(unittest.TestCase):
         client = WorkqClient('127.0.0.1', 9922, loop)
         jobid = uuid.uuid4()
         job = ForegroundJob(jobid, "fg1", 5000, 60000, "hello fg job")
+
         @asyncio.coroutine
         def parallel(client, loop):
             run_task = asyncio.ensure_future(client.run(job), loop=loop)
@@ -55,7 +56,7 @@ class TestWorkq(unittest.TestCase):
             return results
         try:
             loop.run_until_complete(client.connect())
-            results = loop.run_until_complete(parallel(client, loop))
+            loop.run_until_complete(parallel(client, loop))
         finally:
             loop.close()
 
